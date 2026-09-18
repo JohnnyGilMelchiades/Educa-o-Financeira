@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12100e;
+    --panel: #1d1812;
+    --panel-2: #241d15;
+    --ink: #ede6da;
+    --ink-dim: #8c7a6b;
+    --amber: #f3a712;
+    --amber-dim: #7a5a17;
+    --teal: #3aafa9;
+    --red: #c85450;
+    --line: #352c22;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  body{
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 64px;
+    line-height: 1.5;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+  #app{
+    width: 100%;
+    max-width: 620px;
+  }
+
+  .screen{ animation: fadein .35s ease; }
+  @keyframes fadein{ from{ opacity:0; transform: translateY(6px);} to{opacity:1; transform:none;} }
+
+  header.term{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+  }
+  header.term .title{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:700;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    color: var(--amber);
+  }
+  header.term .title .cursor{
+    display:inline-block;
+    width: 8px; height: 1em;
+    background: var(--amber);
+    margin-left: 4px;
+    transform: translateY(2px);
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  header.term .status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 24px;
+  }
+
+  .prompt{
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--teal);
+    font-size: 0.78rem;
+    margin: 0 0 10px;
+  }
+
+  h1.big{
+    font-size: 1.5rem;
+    line-height: 1.3;
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  p.lead{
+    color: var(--ink-dim);
+    margin: 0 0 24px;
+    font-size: 0.95rem;
+  }
+
+  button.primary{
+    font-family:'IBM Plex Mono', monospace;
+    background: var(--amber);
+    color: #1a1408;
+    border: none;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+  button.primary:hover{ background:#ffb92e; }
+  button.primary:disabled{ background: var(--amber-dim); color:#5a4a2a; cursor:not-allowed; }
+
+  button.ghost{
+    font-family:'IBM Plex Mono', monospace;
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    padding: 11px 18px;
+    font-size: 0.85rem;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  button.ghost:hover{ color: var(--ink); border-color: var(--ink-dim); }
+
+  .actions{ display:flex; gap:10px; margin-top: 24px; flex-wrap: wrap; }
+
+  .progress-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    margin-bottom: 18px;
+  }
+
+  .qtext{
+    font-size: 1.08rem;
+    font-weight: 600;
+    margin: 0 0 18px;
+  }
+
+  .opt{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .opt:hover{ border-color: var(--amber-dim); }
+  .opt.sel{ border-color: var(--amber); background: rgba(243,167,18,0.08); }
+  .opt .box{
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--ink-dim);
+    flex: none;
+  }
+  .opt.sel .box{ color: var(--amber); }
+  .opt .otext{ font-size: 0.94rem; }
+
+  .scale-row{ display:flex; gap:8px; margin-top: 4px; }
+  .scale-btn{
+    flex:1;
+    font-family:'IBM Plex Mono', monospace;
+    padding: 14px 0;
+    text-align:center;
+    border:1px solid var(--line);
+    border-radius:2px;
+    cursor:pointer;
+    color: var(--ink-dim);
+  }
+  .scale-btn.sel{ border-color: var(--amber); color: var(--amber); background: rgba(243,167,18,0.08); }
+  .scale-labels{ display:flex; justify-content:space-between; font-size:0.68rem; color:var(--ink-dim); margin-top:6px; font-family:'IBM Plex Mono', monospace;}
+
+  .barline{ font-family:'IBM Plex Mono', monospace; white-space:pre; font-size:0.82rem; }
+
+  .metric{ margin-bottom: 18px; }
+  .metric .label{ display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:6px; }
+  .metric .label .val{ color: var(--amber); font-family:'IBM Plex Mono', monospace; }
+  .meter{ height:8px; background:var(--line); border-radius:2px; overflow:hidden; }
+  .meter > i{ display:block; height:100%; background: var(--teal); }
+
+  .band{
+    font-family:'IBM Plex Mono', monospace;
+    display:inline-block;
+    padding: 4px 10px;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    border-radius: 2px;
+    font-size: 0.78rem;
+    margin-bottom: 18px;
+  }
+
+  .qagg{ margin-bottom: 22px; }
+  .qagg .qh{ font-size: 0.88rem; font-weight: 600; margin-bottom: 8px; }
+  .qagg .row{ display:flex; align-items:center; gap:10px; margin-bottom: 4px; }
+  .qagg .row .opt-label{ flex: 0 0 42%; font-size:0.78rem; color: var(--ink-dim); }
+  .qagg .row .bar-wrap{ flex:1; }
+  .qagg .row .pct{ flex: 0 0 40px; text-align:right; font-family:'IBM Plex Mono', monospace; font-size:0.76rem; color: var(--ink-dim); }
+
+  footer.note{
+    margin-top: 20px;
+    font-size: 0.72rem;
+    color: var(--ink-dim);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  @media (max-width: 480px){
+    .panel{ padding:18px; }
+    h1.big{ font-size:1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+
+  const QUESTIONS = [
+    { id:'q1', section:'perfil', scored:false, text:'Você já trabalha ou recebe alguma renda?',
+      options:['Sim, tenho emprego fixo','Sim, faço bicos ou trabalhos eventuais','Não, ainda não trabalho'] },
+    { id:'q2', section:'perfil', scored:false, text:'Você recebe mesada ou ajuda financeira da família?',
+      options:['Sim','Não','Às vezes'] },
+    { id:'q3', section:'perfil', scored:false, text:'Você já ajudou a família com alguma decisão financeira (contas, compras, negociação)?',
+      options:['Sim, com frequência','Já ajudei algumas vezes','Nunca'] },
+
+    { id:'q4', section:'habitos', scored:true, text:'Você costuma guardar dinheiro?',
+      options:[['Sim, todo mês',2],['Às vezes',1],['Nunca',0]] },
+    { id:'q5', section:'habitos', scored:true, text:'Você sabe quanto gasta por mês, aproximadamente?',
+      options:[['Sim, tenho controle',2],['Mais ou menos',1],['Não faço ideia',0]] },
+    { id:'q6', section:'habitos', scored:true, text:'Você anota ou registra seus gastos de alguma forma (papel, app, planilha)?',
+      options:[['Sim, sempre',2],['Às vezes',1],['Nunca',0]] },
+    { id:'q7', section:'habitos', scored:true, text:'Antes de comprar algo, você pesquisa preços em mais de um lugar?',
+      options:[['Sempre',2],['Às vezes',1],['Raramente',0]] },
+    { id:'q8', section:'habitos', scored:true, text:'Você define um valor máximo pra gastar em um mês (orçamento)?',
+      options:[['Sim',2],['Tento, mas não sigo direito',1],['Não',0]] },
+    { id:'q9', section:'habitos', scored:true, text:'Você já fez algum tipo de investimento (poupança, CDB, etc.)?',
+      options:[['Sim',2],['Não',1],['Não sei o que é isso',0]] },
+
+    { id:'q10', section:'conhecimento', scored:true, text:'Você sabe o que é a taxa Selic?',
+      options:[['Sim',2],['Já ouvi falar, mas não sei explicar',1],['Não',0]] },
+    { id:'q11', section:'conhecimento', scored:true, text:'Você sabe a diferença entre juros simples e juros compostos?',
+      options:[['Sim',2],['Mais ou menos',1],['Não',0]] },
+    { id:'q12', section:'conhecimento', scored:true, text:'Você sabe o que é CDC (Código de Defesa do Consumidor) em relação a compras e golpes?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+    { id:'q13', section:'conhecimento', scored:true, text:'Você sabe o que é inflação e como ela afeta o poder de compra?',
+      options:[['Sim',2],['Mais ou menos',1],['Não',0]] },
+    { id:'q14', section:'conhecimento', scored:true, text:'Você sabe a diferença entre débito e crédito na prática?',
+      options:[['Sim',2],['Mais ou menos',1],['Não',0]] },
+    { id:'q15', section:'conhecimento', scored:true, text:'Você sabe o que é CET (Custo Efetivo Total) em um empréstimo ou financiamento?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+    { id:'q16', section:'conhecimento', scored:true, text:'Você sabe o que é score de crédito (Serasa, SPC etc.)?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+    { id:'q17', section:'conhecimento', scored:true, text:'Você sabe o que é Tesouro Direto?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+    { id:'q18', section:'conhecimento', scored:true, text:'Você sabe calcular quanto uma compra parcelada custa a mais do que à vista?',
+      options:[['Sim',2],['Mais ou menos',1],['Não',0]] },
+    { id:'q19', section:'conhecimento', scored:true, text:'Você sabe o que é MEI (Microempreendedor Individual)?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+
+    { id:'q20', section:'comportamento', scored:true, text:'Você já caiu ou quase caiu em algum golpe financeiro (phishing, pirâmide, etc.)?',
+      options:[['Não',2],['Não tenho certeza',1],['Sim',0]] },
+    { id:'q21', section:'comportamento', scored:true, text:'Você compra por impulso, sem planejar?',
+      options:[['Raramente',2],['Às vezes',1],['Frequentemente',0]] },
+    { id:'q22', section:'comportamento', scored:true, text:'Já comprou algo parcelado sem calcular se caberia no orçamento dos meses seguintes?',
+      options:[['Nunca',2],['Já aconteceu uma vez ou outra',1],['Acontece com frequência',0]] },
+    { id:'q23', section:'comportamento', scored:true, text:'Você compara o preço à vista com o parcelado antes de decidir?',
+      options:[['Sempre',2],['Às vezes',1],['Nunca',0]] },
+    { id:'q24', section:'comportamento', scored:true, text:'Você costuma emprestar ou pedir dinheiro emprestado para amigos e família com frequência?',
+      options:[['Raramente ou nunca',2],['Às vezes',1],['Com frequência',0]] },
+    { id:'q25', section:'comportamento', scored:true, text:'Você segue algum criador de conteúdo ou canal que fala sobre educação financeira?',
+      options:[['Sim, sigo regularmente',2],['Às vezes vejo algo',1],['Não',0]] },
+
+    { id:'q26', section:'planejamento', scored:true, text:'Você tem algum objetivo financeiro de curto prazo (comprar algo, guardar para uma viagem, etc.)?',
+      options:[['Sim, e estou guardando pra ele',2],['Tenho um objetivo mas não estou guardando',1],['Não tenho',0]] },
+    { id:'q27', section:'planejamento', scored:true, text:'Você já pensou em como vai se sustentar quando começar a trabalhar ou morar sozinho?',
+      options:[['Sim, já pensei bastante',2],['Já pensei um pouco',1],['Ainda não pensei nisso',0]] },
+    { id:'q28', section:'planejamento', scored:true, text:'Você sabe o que é previdência (INSS, previdência privada)?',
+      options:[['Sim',2],['Já ouvi falar',1],['Não',0]] },
+    { id:'q29', section:'planejamento', scored:true, text:'Você pretende ou já pensou em empreender (ter um negócio próprio)?',
+      options:[['Sim, já tenho ideias concretas',2],['Já pensei, mas sem plano',1],['Não pretendo',0]] },
+
+    { id:'q30', section:'confianca', scored:false, scale:true, text:'Você se sente confiante para tomar decisões financeiras no dia a dia?' },
+  ];
+
+  const COLLECTION = 'respostas';
+  let db = null;
+  let dbReady = false;
+
+  let state = { screen:'intro', qi:0, answers:{}, submitted:false, classAgg:null, loadingClass:false };
+
+  const app = document.getElementById('app');
+
+  function header(statusText){
+    return '<header class="term">' +
+      '<div class="title">DIAGNÓSTICO FINANCEIRO<span class="cursor"></span></div>' +
+      '<div class="status">' + (statusText||'') + '</div>' +
+    '</header>';
+  }
+
+  function render(){
+    if(state.screen === 'intro') return renderIntro();
+    if(state.screen === 'quiz') return renderQuiz();
+    if(state.screen === 'results') return renderResults();
+    if(state.screen === 'class') return renderClass();
+  }
+
+  function renderIntro(){
+    app.innerHTML =
+      '<div class="screen">' +
+      header(dbReady ? 'conectado' : '') +
+      '<div class="panel">' +
+        '<p class="prompt">&gt; iniciar autoavaliação</p>' +
+        '<h1 class="big">Como está sua relação com o dinheiro?</h1>' +
+        '<p class="lead">30 perguntas rápidas e anônimas sobre hábitos, conhecimento, comportamento e planejamento financeiro. No final você vê seu perfil completo.</p>' +
+        '<button class="primary" id="btn-start">Iniciar</button>' +
+      '</div>' +
+      '<footer class="note">respostas anônimas — nenhum nome é solicitado</footer>' +
+      '</div>';
+    document.getElementById('btn-start').onclick = () => { state.screen='quiz'; state.qi=0; render(); };
+  }
+
+  function renderQuiz(){
+    const q = QUESTIONS[state.qi];
+    const total = QUESTIONS.length;
+    let optsHtml = '';
+
+    if(q.scale){
+      const cur = state.answers[q.id];
+      let scaleBtns = '';
+      for(let v=1; v<=5; v++){
+        scaleBtns += '<div class="scale-btn ' + (cur===v?'sel':'') + '" data-v="'+v+'">' + v + '</div>';
+      }
+      optsHtml = '<div class="scale-row">' + scaleBtns + '</div>' +
+        '<div class="scale-labels"><span>pouco confiante</span><span>muito confiante</span></div>';
+    } else {
+      q.options.forEach((opt, idx) => {
+        const label = Array.isArray(opt) ? opt[0] : opt;
+        const sel = state.answers[q.id] && state.answers[q.id].idx === idx;
+        optsHtml += '<div class="opt ' + (sel?'sel':'') + '" data-idx="'+idx+'">' +
+          '<span class="box mono">[' + (sel?'x':' ') + ']</span>' +
+          '<span class="otext">' + label + '</span>' +
+        '</div>';
+      });
+    }
+
+    app.innerHTML =
+      '<div class="screen">' +
+      header('') +
+      '<div class="panel">' +
+        '<p class="progress-line">pergunta ' + (state.qi+1) + ' / ' + total + '</p>' +
+        '<p class="qtext">' + q.text + '</p>' +
+        optsHtml +
+        '<div class="actions">' +
+          (state.qi>0 ? '<button class="ghost" id="btn-back">Voltar</button>' : '') +
+          '<button class="primary" id="btn-next" disabled>' + (state.qi===total-1 ? 'Ver meu resultado' : 'Próxima') + '</button>' +
+        '</div>' +
+      '</div>' +
+      '</div>';
+
+    const nextBtn = document.getElementById('btn-next');
+    function updateNext(){
+      nextBtn.disabled = (state.answers[q.id] === undefined);
+    }
+    updateNext();
+
+    if(q.scale){
+      document.querySelectorAll('.scale-btn').forEach(el => {
+        el.onclick = () => {
+          state.answers[q.id] = { idx: null, value: parseInt(el.dataset.v,10) };
+          renderQuiz();
+        };
+      });
+    } else {
+      document.querySelectorAll('.opt').forEach(el => {
+        el.onclick = () => {
+          const idx = parseInt(el.dataset.idx,10);
+          const scoreVal = Array.isArray(q.options[idx]) ? q.options[idx][1] : null;
+          state.answers[q.id] = { idx, score: scoreVal };
+          renderQuiz();
+        };
+      });
+    }
+
+    if(document.getElementById('btn-back')){
+      document.getElementById('btn-back').onclick = () => { state.qi--; render(); };
+    }
+    nextBtn.onclick = () => {
+      if(state.qi < total-1){ state.qi++; render(); }
+      else { finishQuiz(); }
+    };
+  }
+
+  function computeScores(){
+    let habitos=0, habitosMax=0, conhecimento=0, conhecimentoMax=0, comportamento=0, comportamentoMax=0, planejamento=0, planejamentoMax=0;
+    QUESTIONS.forEach(q => {
+      if(!q.scored) return;
+      const a = state.answers[q.id];
+      const s = a ? a.score : 0;
+      if(q.section==='habitos'){ habitos+=s; habitosMax+=2; }
+      if(q.section==='conhecimento'){ conhecimento+=s; conhecimentoMax+=2; }
+      if(q.section==='comportamento'){ comportamento+=s; comportamentoMax+=2; }
+      if(q.section==='planejamento'){ planejamento+=s; planejamentoMax+=2; }
+    });
+    const total = habitos+conhecimento+comportamento+planejamento;
+    const totalMax = habitosMax+conhecimentoMax+comportamentoMax+planejamentoMax;
+    return { habitos, habitosMax, conhecimento, conhecimentoMax, comportamento, comportamentoMax, planejamento, planejamentoMax, total, totalMax };
+  }
+
+  async function finishQuiz(){
+    const scores = computeScores();
+    state.scores = scores;
+    state.screen = 'results';
+    state.submitted = false;
+    render();
+
+    if(db){
+      try{
+        const record = { answers: {}, ts: Date.now() };
+        QUESTIONS.forEach(q => {
+          const a = state.answers[q.id];
+          if(!a) return;
+          record.answers[q.id] = q.scale ? a.value : a.idx;
+        });
+        await db.collection(COLLECTION).add(record);
+        state.submitted = true;
+      } catch(e){
+        state.submitted = false;
+      }
+      render();
+    }
+  }
+
+  function bandFor(total, max){
+    const pct = max ? total/max : 0;
+    if(pct < 0.35) return { label:'Iniciante', hint:'ainda tem bastante coisa nova pela frente — e tá tudo bem, é pra isso que a gente estuda.' };
+    if(pct < 0.7) return { label:'Em desenvolvimento', hint:'você já entende o básico. Alguns pontos merecem reforço.' };
+    return { label:'Consciente', hint:'você domina bem os fundamentos de finanças pessoais.' };
+  }
+
+  function metricHtml(label, val, max){
+    const pct = max ? Math.round((val/max)*100) : 0;
+    return '<div class="metric">' +
+      '<div class="label"><span>'+label+'</span><span class="val mono">'+val+'/'+max+'</span></div>' +
+      '<div class="meter"><i style="width:'+pct+'%"></i></div>' +
+    '</div>';
+  }
+
+  function buildExportCode(){
+    const compact = {};
+    QUESTIONS.forEach(q => {
+      const a = state.answers[q.id];
+      if(!a) return;
+      compact[q.id] = q.scale ? a.value : a.idx;
+    });
+    return btoa(unescape(encodeURIComponent(JSON.stringify(compact))));
+  }
+
+  function renderResults(){
+    const s = state.scores;
+    const band = bandFor(s.total, s.totalMax);
+    const q30 = state.answers['q30'] ? state.answers['q30'].value : null;
+
+    let statusMsg = '';
+    if(db){
+      statusMsg = state.submitted ? 'resposta registrada' : 'salvando...';
+    }
+
+    app.innerHTML =
+      '<div class="screen">' +
+      header(statusMsg) +
+      '<div class="panel">' +
+        '<p class="prompt">&gt; resultado individual</p>' +
+        '<div class="band mono">' + band.label + '</div>' +
+        '<p class="lead" style="margin-top:-8px;">' + band.hint + '</p>' +
+        metricHtml('Hábitos financeiros', s.habitos, s.habitosMax) +
+        metricHtml('Conhecimento técnico', s.conhecimento, s.conhecimentoMax) +
+        metricHtml('Comportamento de risco', s.comportamento, s.comportamentoMax) +
+        metricHtml('Planejamento e futuro', s.planejamento, s.planejamentoMax) +
+        (q30!==null ? '<p class="mono" style="font-size:0.82rem;color:var(--ink-dim);">autoconfiança declarada: ' + q30 + '/5</p>' : '') +
+        '<div class="actions">' +
+          (db
+            ? '<button class="primary" id="btn-class">Ver resultado da turma</button>'
+            : '<button class="primary" id="btn-export">Copiar código do resultado</button>') +
+          '<button class="ghost" id="btn-again">Refazer</button>' +
+        '</div>' +
+        (db ? '' : '<p class="mono" id="export-hint" style="font-size:0.72rem;color:var(--ink-dim);margin-top:14px;display:none;">código copiado — envie para o professor</p>') +
+      '</div>' +
+      '</div>';
+
+    document.getElementById('btn-again').onclick = () => {
+      state.screen='intro'; state.qi=0; state.answers={};
+      render();
+    };
+    if(db){
+      document.getElementById('btn-class').onclick = async () => {
+        state.screen = 'class';
+        state.classAgg = null;
+        state.loadingClass = true;
+        render();
+        await loadClassAggregate();
+        state.loadingClass = false;
+        render();
+      };
+    } else {
+      document.getElementById('btn-export').onclick = async () => {
+        const code = buildExportCode();
+        try{ await navigator.clipboard.writeText(code); }
+        catch(e){ window.prompt('Copie o código abaixo:', code); }
+        const hint = document.getElementById('export-hint');
+        if(hint) hint.style.display = 'block';
+      };
+    }
+  }
+
+  async function loadClassAggregate(){
+    if(!db){ state.classAgg = { error: 'sem-conexao' }; return; }
+    try{
+      const snap = await db.collection(COLLECTION).limit(1000).get();
+      const docs = snap.docs.map(d => d.data());
+      state.classAgg = { docs };
+    } catch(e){
+      state.classAgg = { error: 'falha' };
+    }
+  }
+
+  function barLine(pct, width){
+    width = width || 20;
+    const filled = Math.round((pct/100)*width);
+    return '█'.repeat(filled) + '░'.repeat(width-filled);
+  }
+
+  function renderClass(){
+    if(state.loadingClass){
+      app.innerHTML = '<div class="screen">' + header('') +
+        '<div class="panel"><p class="mono" style="color:var(--ink-dim);">carregando respostas da turma...</p></div></div>';
+      return;
+    }
+
+    const agg = state.classAgg;
+    let body = '';
+
+    if(!agg || agg.error || !agg.docs || agg.docs.length===0){
+      body = '<p class="lead">Ainda não há respostas suficientes da turma registradas neste dispositivo/turno.</p>';
+    } else {
+      const docs = agg.docs;
+      const n = docs.length;
+      body += '<p class="prompt" style="margin-bottom:18px;">&gt; ' + n + ' resposta(s) computada(s)</p>';
+
+      QUESTIONS.forEach(q => {
+        if(q.scale){
+          const counts = [0,0,0,0,0];
+          docs.forEach(d => {
+            const v = d.answers ? d.answers[q.id] : undefined;
+            if(v>=1 && v<=5) counts[v-1]++;
+          });
+          let rows = '';
+          for(let i=0;i<5;i++){
+            const pct = n ? Math.round((counts[i]/n)*100) : 0;
+            rows += '<div class="row"><div class="opt-label">Nota ' + (i+1) + '</div>' +
+              '<div class="bar-wrap barline">' + barLine(pct) + '</div>' +
+              '<div class="pct">' + pct + '%</div></div>';
+          }
+          body += '<div class="qagg"><div class="qh">' + q.text + '</div>' + rows + '</div>';
+        } else {
+          const counts = q.options.map(()=>0);
+          docs.forEach(d => {
+            const v = d.answers ? d.answers[q.id] : undefined;
+            if(v!==undefined && counts[v]!==undefined) counts[v]++;
+          });
+          let rows = '';
+          q.options.forEach((opt, idx) => {
+            const label = Array.isArray(opt) ? opt[0] : opt;
+            const pct = n ? Math.round((counts[idx]/n)*100) : 0;
+            rows += '<div class="row"><div class="opt-label">' + label + '</div>' +
+              '<div class="bar-wrap barline">' + barLine(pct) + '</div>' +
+              '<div class="pct">' + pct + '%</div></div>';
+          });
+          body += '<div class="qagg"><div class="qh">' + q.text + '</div>' + rows + '</div>';
+        }
+      });
+    }
+
+    app.innerHTML =
+      '<div class="screen">' +
+      header('') +
+      '<div class="panel">' +
+        '<p class="prompt">&gt; retrato da turma</p>' +
+        body +
+        '<div class="actions">' +
+          '<button class="ghost" id="btn-back-results">Voltar ao meu resultado</button>' +
+          '<button class="ghost" id="btn-refresh">Atualizar</button>' +
+        '</div>' +
+      '</div>' +
+      '</div>';
+
+    document.getElementById('btn-back-results').onclick = () => { state.screen='results'; render(); };
+    document.getElementById('btn-refresh').onclick = async () => {
+      state.loadingClass = true; render();
+      await loadClassAggregate();
+      state.loadingClass = false; render();
+    };
+  }
+
+  async function init(){
+    render();
+    try{
+      if(window.claude && typeof window.claude.use === 'function'){
+        db = await window.claude.use('db');
+        dbReady = !!db;
+      }
+    } catch(e){ db = null; }
+    if(state.screen==='intro') render();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
